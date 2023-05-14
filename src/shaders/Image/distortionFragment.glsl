@@ -4,8 +4,11 @@ uniform sampler2D uDisplace;
 uniform sampler2D uTextureOne;
 uniform vec2 uImageRes;
 uniform vec2 uRes;
+uniform sampler2D uText;
+uniform vec2 uMouse;
 
 varying vec2 vUv;
+varying vec3 vPosition;
 
 
 vec2 CoverUV(vec2 u, vec2 s, vec2 i) {
@@ -16,30 +19,48 @@ vec2 CoverUV(vec2 u, vec2 s, vec2 i) {
   return u * s / st + o;
 }
 
+float map(float value, float min1, float max1, float min2, float max2) {
+  return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
+}
+
 void main () {
 
   //! ASPECT RATIO
   vec2 uv = CoverUV(vUv, uRes, uImageRes);
   vec3 Image = texture2D(uTextureOne, uv).rgb;
 
-
   //* displace texture
   vec4 displace = texture2D(uDisplace, vUv.yx);
 
-  // //* displace the uv
+  //* displace the uv
   vec2 displacedUv = vUv;
-  
-  displacedUv.y = mix(vUv.y, displace.g - 0.1, uProgress);
+  displacedUv.y = mix(vUv.y, displace.g, uProgress);
 
+  //* displace the texture
+  Image.r = texture2D(uTextureOne, displacedUv + vec2(0.0, 10.0 * 0.01)* uProgress).r;
+  Image.g = texture2D(uTextureOne, displacedUv + vec2(0.0, 10.0 * 0.05)* uProgress).g;
+  Image.b = texture2D(uTextureOne, displacedUv + vec2(0.0, 10.0 * 0.1)* uProgress).b;
 
+  //gl_FragColor = vec4(Image, 1.0);
+  //======================================================================
+  //======================================================================
 
-  Image.r = texture2D(uTextureOne, displacedUv + vec2(0.0,5.0 
-  * 0.05)* uProgress).r;
-  Image.g = texture2D(uTextureOne, displacedUv + vec2(0.0, 5.0 * 0.1)* uProgress).g;
-  Image.b = texture2D(uTextureOne, displacedUv + vec2(0.0, 5.0 *  0.2)* uProgress).b;
+  //! Text Distortion
 
+  vec2 direction = normalize(vPosition.xy - uMouse.xy);
+  float dist = length(vPosition - vec3(uMouse, 1.0));
 
-        
+  float prox = 1.0 - map(dist, 0.0, 0.4, 0.0, 1.0);
 
-  gl_FragColor = vec4(Image, 1.0);
+  prox = clamp(prox, 0.0, 1.0);
+
+  vec2 zoomedUv = vUv + direction * prox * uProgress;
+
+  vec2 zoomedUv1 = mix(vUv, uMouse.xy + vec2(0.5), prox * uProgress);
+  vec4 textColor = texture2D(uText, zoomedUv1);
+
+  gl_FragColor = textColor;
+//   gl_FragColor = vec4(prox, prox, prox, 1.0);
+//   gl_FragColor = vec4(direction, 0.0, 1.0);
+// ;
 }
