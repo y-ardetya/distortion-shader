@@ -3,27 +3,15 @@ import { extend, useFrame } from "@react-three/fiber";
 import vertexShader from "../shaders/Image/distortionVertex.glsl";
 import fragmentShader from "../shaders/Image/distortionFragment.glsl";
 import DisplacementMap from "../assets/map1.jpg";
-import img1 from "../assets/img1.jpg";
-import img2 from "../assets/img2.jpg";
-import { useRef, useState } from "react";
-import { useControls } from "leva";
+import img1 from "../assets/damn.jpg";
+import { useRef } from "react";
+import { gsap } from "gsap";
 
 const Distortion = () => {
   const ref = useRef();
-  const [hovered, setHovered] = useState(false);
-
-  //   const { progress } = useControls({
-  //     progress: {
-  //       value: 0.0,
-  //       min: 0,
-  //       max: 1,
-  //       step: 0.0001,
-  //     },
-  //   });
 
   const Displace = useTexture(DisplacementMap);
   const imageOne = useTexture(img1);
-  const imageTwo = useTexture(img2);
 
   const DistortionMaterial = shaderMaterial(
     {
@@ -31,7 +19,8 @@ const Distortion = () => {
       uProgress: 0,
       uDisplace: Displace,
       uTextureOne: imageOne,
-      uTextureTwo: imageTwo,
+      uImageRes: [imageOne.source.data.width, imageOne.source.data.height],
+      uRes: [1, 1],
     },
     vertexShader,
     fragmentShader
@@ -41,16 +30,35 @@ const Distortion = () => {
 
   useFrame((state, delta) => {
     ref.current.uTime += delta;
-    ref.current.uProgress = hovered ? 0.1 : 0;
   });
+
+  const handleMouseEnter = () => {
+    gsap.fromTo(
+      ref.current.uniforms.uProgress,
+      { value: 0 },
+      {
+        value: 0.15,
+        duration: 1,
+        ease: "expo.easeOut",
+      }
+    );
+  };
+
+  const handleMouseLeave = () => {
+    gsap.fromTo(
+      ref.current.uniforms.uProgress,
+      { value: 0.15 },
+      { value: 0, duration: 1, ease: "expo.easeIn" }
+    );
+  };
 
   return (
     <mesh
-      scale={4}
-      onPointerOver={() => setHovered(true)}
-      onPointerLeave={() => setHovered(false)}
+   
+      onPointerEnter={handleMouseEnter}
+      onPointerLeave={handleMouseLeave}
     >
-      <planeGeometry />
+      <planeGeometry args={[4, 6]} />
       <distortionMaterial ref={ref} />
     </mesh>
   );

@@ -1,9 +1,5 @@
-import React from 'react'
-
 const TouchDistort = () => {
-  return (
-    <div>TouchDistort</div>
-  )
-}
+  return null;
+};
 
-export default TouchDistort
+export default TouchDistort;
